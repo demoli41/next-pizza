@@ -3,94 +3,107 @@
 import { prisma } from "@/prisma/prisma-client";
 import { PayOrderTemplate } from "@/shared/components";
 import { CheckoutFormValues } from "@/shared/constants";
+import { createStripeCheckoutSession } from "@/shared/lib"; 
 import { sendEmail } from "@/shared/lib";
 import { OrderStatus } from "@prisma/client";
 import { cookies } from "next/headers";
 
+export async function createOrder(data: CheckoutFormValues) {
+  try {
+    const cookieStore = cookies();
+    const cartToken = cookieStore.get('cartToken')?.value;
 
-export async function createOrder(data:CheckoutFormValues) {
-   try{
-
-    const cookieStore=cookies();
-    const cartToken=cookieStore.get('cartToken')?.value;
-
-    if(!cartToken){
-        throw new Error('Cart token not found');
+    if (!cartToken) {
+      throw new Error('Cart token not found');
     }
 
-    // Find cart by token
-    const userCart=await prisma.cart.findFirst({
-        include: {
-            user: true,
-            items: {
+    const userCart = await prisma.cart.findFirst({
+      include: {
+        user: true,
+        items: {
+          include: {
+            ingredients: true,
+            productItem: {
               include: {
-                ingredients: true,
-                productItem: {
-                  include: {
-                    product: true,
-                  },
-                },
+                product: true,
               },
             },
           },
-          where: {
-            token: cartToken,
-          },
+        },
+      },
+      where: {
+        token: cartToken,
+      },
     });
 
-    // If cart not found
-
     if (!userCart) {
-        throw new Error('Cart not found');
-      }
-  
-      if (userCart?.totalAmount === 0) {
-        throw new Error('Cart is empty');
-      }
+      throw new Error('Cart not found');
+    }
 
-      // Create order
-      const order = await prisma.order.create({
-        data: {
-          token: cartToken,
-          fullName: data.firstName + ' ' + data.lastName,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          comment: data.comment,
-          totalAmount: userCart.totalAmount,
-          status: OrderStatus.PENDING,
-          items: JSON.stringify(userCart.items),
-        },
-      });
+    if (userCart.totalAmount === 0) {
+      throw new Error('Cart is empty');
+    }
 
-      // Clear cart
-      await prisma.cart.update({
-        where: {
-          id: userCart.id,
-        },
-        data: {
-          totalAmount: 0,
-        },
-      });
+    const order = await prisma.order.create({
+      data: {
+        token: cartToken,
+        fullName: data.firstName + ' ' + data.lastName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        comment: data.comment,
+        totalAmount: userCart.totalAmount,
+        status: OrderStatus.PENDING,
+        items: JSON.stringify(userCart.items),
+      },
+    });
 
-      // Clear cart items
-      await prisma.cartItem.deleteMany({
-        where: {
-          cartId: userCart.id,
-        },
-      });
+    await prisma.cart.update({
+      where: { id: userCart.id },
+      data: { totalAmount: 0 },
+    });
 
-      // Return order url
+    await prisma.cartItem.deleteMany({
+      where: { cartId: userCart.id },
+    });
 
-      await sendEmail(data.email, 'Pizza house | Оплатіть замовлення №'+ order.id, PayOrderTemplate({
+    const paymentSession = await createStripeCheckoutSession({
+      amount: order.totalAmount,
+      orderId: order.id,
+      description: 'Оплата замовлення №' + order.id,
+    });
+
+
+    if (!paymentSession || !paymentSession.url || !paymentSession.id) {
+      throw new Error('Payment session creation failed');
+    }
+
+
+    await prisma.order.update({
+      where: {
+        id: order.id,
+      },
+      data: {
+        paymentId: paymentSession.id, 
+      },
+    });
+
+
+    const paymentUrl = paymentSession.url;
+
+    await sendEmail(
+      data.email,
+      'Pizza house | Оплатіть замовлення №' + order.id,
+      PayOrderTemplate({
         orderId: order.id,
         totalAmount: order.totalAmount,
-        paymentUrl: "template",
-      }),
+        paymentUrl,
+      })
     );
 
-   }catch(err){
-    console.log('[CreateOrder] Server error',err);
-
-   }
+    return paymentUrl;
+  } catch (err) {
+    console.error('[CreateOrder] Server error', err);
+    throw err;
+  }
 }

@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from "@/shared/lib/utils";
 import { Container } from "./container";
 import { SearchInput } from "./search-input";
@@ -7,6 +9,9 @@ import { Button } from "../ui";
 import {  UserRound } from "lucide-react";
 import Link from "next/link";
 import { CartButton } from "./cart-button";
+import toast from "react-hot-toast";
+import { useRouter, useSearchParams } from "next/navigation";
+
 
 interface Props {
     hasSearch?: boolean;
@@ -15,6 +20,37 @@ interface Props {
 }
 
 export const Header: React.FC<Props> = ({hasSearch=true,hasCart=true,className}) => {
+
+const searchParams = useSearchParams();
+const router = useRouter();
+
+React.useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    const cancelled = searchParams.get('cancelled');
+
+    if (sessionId) {
+        setTimeout(() => {
+            toast.success('Дякуємо! Ваше замовлення успішно оплачене!');
+        }, 1000);
+    }
+
+    if (cancelled) {
+        setTimeout(() => {
+            toast.error('Оплату було скасовано. Ви можете спробувати ще раз.');
+        }, 1000);
+    }
+
+    if (sessionId || cancelled) {
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.delete('session_id');
+        newParams.delete('cancelled');
+
+        const newUrl =
+            window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+}, [searchParams]);
+
 return (
     <header className={cn(' border-b',className)}>
         <Container className="flex items-center justify-between py-8 ">
