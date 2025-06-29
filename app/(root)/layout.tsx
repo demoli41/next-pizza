@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Header } from "@/shared/components/shared/header";
+import { Suspense } from "react";
 
 
 
@@ -13,13 +14,15 @@ export default function HomeLayout({
   modal,
 }: Readonly<{
   children: React.ReactNode;
-  modal:React.ReactNode; 
+  modal: React.ReactNode;
 }>) {
   return (
-        <main className="min-h-screen">
-          <Header className="pl-4 xl:pl-0"/>
-          {children}
-          {modal}
-        </main>
+    <main className="min-h-screen">
+      <Suspense>
+        <Header className="pl-4 xl:pl-0" />
+      </Suspense>
+      {children}
+      {modal}
+    </main>
   );
 }
