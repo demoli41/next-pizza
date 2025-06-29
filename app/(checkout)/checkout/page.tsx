@@ -8,13 +8,16 @@ import { CheckoutAddressForm, CheckoutCart, CheckoutPersonalForm } from "@/share
 import { checkoutFormSchema, CheckoutFormValues } from "@/shared/constants";
 import { createOrder } from "@/app/actions";
 import toast from "react-hot-toast";
-import { useState } from "react";
+import React, { useState } from "react";
+import { useSession } from "next-auth/react";
+import { Api } from "@/shared/services/api-client";
 
 
 
 export default function CheckoutPage() {
     const [submitting, setSubmitting] = useState(false);
     const {totalAmount,updateItemQuantity,items,removeCartItem,loading}=useCart();
+    const {data:session}=useSession();
 
    const form=useForm<CheckoutFormValues>({
     resolver:zodResolver(checkoutFormSchema),
@@ -27,6 +30,22 @@ export default function CheckoutPage() {
         comment:'',
     }
    });
+
+   React.useEffect(()=>{
+
+    async function fetchUserInfo() {
+        const data=await Api.auth.getMe();
+        const [firstName,lastName]=data.fullName.split(' ');
+
+        form.setValue('firstName',firstName);
+        form.setValue('lastName',lastName);
+        form.setValue('email',data.email);
+    }
+
+    if(session){
+        fetchUserInfo();
+    } 
+   },[session]);
 
    const onSubmit=async (data:CheckoutFormValues)=>{
     try{
@@ -57,11 +76,11 @@ export default function CheckoutPage() {
 
 
     return (/* TO DO react imask for tel number  */
-    <Container>
+    <Container className="pt-10 pb-10 sm:pb-20 px-4">
         <Title text="Оформлення замовлення"  className="font-extrabold mb-8 text-[36px]"/>
             <FormProvider {...form}>              
             <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="flex gap-10">
+            <div className="lg:flex gap-5 md:gap-10">
                 {/* Left side */}
                 <div className="flex flex-col gap-10 flex-1 mb-20">
                     <CheckoutCart 
@@ -76,7 +95,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Right side */}
-                <div className="w-[450px]">
+                <div className="w-full lg:w-[450px]">
                         <CheckoutSidebar  totalAmount={totalAmount} loading={loading || submitting}/>
                 </div>
             </div>

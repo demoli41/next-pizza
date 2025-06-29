@@ -17,7 +17,7 @@ export default function HomeLayout({
 }>) {
   return (
         <main className="min-h-screen">
-          <Header />
+          <Header className="pl-4 xl:pl-0"/>
           {children}
           {modal}
         </main>

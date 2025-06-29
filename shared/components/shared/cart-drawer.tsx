@@ -68,7 +68,7 @@ export const CartDrawer: React.FC<React.PropsWithChildren> = ({children}) => {
               <SheetClose>
                 <Button className="w-56 h-12 text-base" size="lg">
                   <ArrowLeft className="w-5 mr-2" />
-                  Повернутися назад
+                  Повернутися
                 </Button>
               </SheetClose>
             </div>

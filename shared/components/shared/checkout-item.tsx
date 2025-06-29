@@ -31,12 +31,14 @@ export const CheckoutItem: React.FC<Props> = ({
     <div className={cn('flex items-center justify-between',{
       'opacity-50 pointer-events-none':disabled,
   }, className)}>
-      <div className="flex items-center gap-5 flex-1">
+      <div className="sm:flex items-center gap-5 flex-1">
         <CartItemDetails.Image src={imageUrl} />
         <CartItemDetails.Info name={name} details={details}/>
       </div>
 
-      <CartItemDetails.Price value={price} />
+      <div className="pl-4">
+        <CartItemDetails.Price value={price}/>
+      </div>
 
       <div className="flex items-center gap-5 ml-20">
         <CartItemDetails.CountButton onClick={onClickCountButton} value={quantity} />

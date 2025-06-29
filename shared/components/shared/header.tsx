@@ -11,6 +11,9 @@ import Link from "next/link";
 import { CartButton } from "./cart-button";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession,signIn } from "next-auth/react";
+import { ProfileButton } from "./profile-button";
+import { AuthModal } from "./modals";
 
 
 interface Props {
@@ -21,12 +24,20 @@ interface Props {
 
 export const Header: React.FC<Props> = ({hasSearch=true,hasCart=true,className}) => {
 
+const [openAuthModal, setOpenAuthModal] = React.useState(false);
+
+const {data: session} = useSession();
+
 const searchParams = useSearchParams();
+
+console.log('Session:', session);
+
 const router = useRouter();
 
 React.useEffect(() => {
-    const sessionId = searchParams.get('session_id');
-    const cancelled = searchParams.get('cancelled');
+    const sessionId = searchParams?.get('session_id');
+    const cancelled = searchParams?.get('cancelled');
+    const verified = searchParams?.get('verified');
 
     if (sessionId) {
         setTimeout(() => {
@@ -40,10 +51,17 @@ React.useEffect(() => {
         }, 1000);
     }
 
-    if (sessionId || cancelled) {
+    if (verified) {
+        setTimeout(() => {
+            toast.success('Вашу електронну адресу успішно підтверджено!');
+        }, 1000);
+    }
+
+    if (sessionId || cancelled || verified) {
         const newParams = new URLSearchParams(window.location.search);
         newParams.delete('session_id');
         newParams.delete('cancelled');
+        newParams.delete('verified');
 
         const newUrl =
             window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : '');
@@ -53,27 +71,26 @@ React.useEffect(() => {
 
 return (
     <header className={cn(' border-b',className)}>
-        <Container className="flex items-center justify-between py-8 ">
+        <Container className="flex items-center justify-between py-8">
             {/* left part */}
            <Link href="/">
            <div className="flex items-center gap-4">
                 <Image src="/logo.png" alt="Logo" width={35} height={35} />
                 <div>
-                    <h1 className="text-2xl uppercase font-black">Pizza House Volochysk</h1>
+                    <h1 className="text-2xl uppercase font-black">Pizza House</h1>
                     <p className="text-sm text-gray-400 leading-3">З нами завжди смачніше!</p>
                 </div>
             </div>
            </Link>
 
-           {hasSearch && <div className="mx-10 flex-1">
+           {hasSearch && <div className="hidden  md:inline mx-10 flex-1">
                 <SearchInput/>
             </div>}
 
                {/* right part */}
                <div className='flex items-start gap-1'>
-                    <Button variant='outline' className="flex items-center gap-3">
-                    <UserRound size={16}/>
-                        Увійти</Button>
+                <AuthModal open={openAuthModal} onClose={()=>setOpenAuthModal(false)}/>
+                    <ProfileButton onClickSignIn={()=>setOpenAuthModal(true)}/>              
                        {hasCart && <CartButton/>}
                </div>
         </Container>

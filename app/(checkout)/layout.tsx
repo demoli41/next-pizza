@@ -13,7 +13,7 @@ export default function CheckoutLayout({
     return (
             <main className="min-h-screen bg-[#F4F1EE]">
                 <Container>
-                    <Header hasSearch={false} hasCart={false} className='border-gray-200'/>
+                    <Header hasSearch={false} hasCart={false} className='pl-4 xl:pl-0 border-gray-200'/>
                     {children}
                 </Container>
             </main>
