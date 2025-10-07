@@ -22,6 +22,7 @@ export const FiltersDrawer: React.FC<Props> = ({ className }) => {
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="outline" className="w-full flex items-center justify-center">
+            Фільтри
             <Filter className="w-4 h-4" />
           </Button>
         </SheetTrigger>

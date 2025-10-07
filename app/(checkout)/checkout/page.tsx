@@ -82,7 +82,7 @@ export default function CheckoutPage() {
             <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="lg:flex gap-5 md:gap-10">
                 {/* Left side */}
-                <div className="flex flex-col gap-10 flex-1 mb-20">
+                <div className="flex flex-col gap-8 md:gap-10 flex-1 mb-8 md:mb-20">
                     <CheckoutCart 
                     onClickCountButton={onClickCountButton} 
                     removeCartItem={removeCartItem}
